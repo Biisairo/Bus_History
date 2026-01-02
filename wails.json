@@ -1,0 +1,11 @@
+{
+	"name": "bus_history",
+	"frontend:install": "",
+	"frontend:build": "",
+	"frontend:dev:watcher": "",
+	"frontend:dev:serverUrl": "",
+	"author": {
+		"name": "biisairo",
+		"email": "rlark1224@naver.com"
+	}
+}

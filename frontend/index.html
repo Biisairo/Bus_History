@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🚍 버스 정보 수집 시스템</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>🚍 버스 정보 수집 시스템</h1>
+      <p>경기도 버스 도착 정보 실시간 모니터링</p>
+    </header>
+
+    <div id="notification" class="notification hidden"></div>
+
+    <!-- 네비게이션 -->
+    <nav id="main-nav" class="tabs">
+      <button class="tab-btn" id="nav-home" onclick="showView('home')">🏠 홈으로</button>
+      <button class="tab-btn" id="nav-register" onclick="showView('register')">📝 등록</button>
+      <button class="tab-btn" id="nav-list" onclick="showView('list')">⚙️ 목록</button>
+      <button class="tab-btn" id="nav-options" onclick="showView('options')">🛠️ 옵션</button>
+    </nav>
+
+    <!-- 탭 콘텐츠 -->
+    <div class="tab-content">
+      <!-- 홈 화면 -->
+      <div id="home-view" class="view active">
+        <div class="home-menu">
+          <button class="menu-card" onclick="toggleCollection()" id="main-toggle-btn">
+            <div class="menu-icon">📡</div>
+            <div class="menu-title">수집 시작</div>
+            <div class="menu-desc">실시간 데이터 수집을 시작하거나 중지합니다</div>
+          </button>
+          <button class="menu-card" onclick="showView('register')">
+            <div class="menu-icon">➕</div>
+            <div class="menu-title">수집위치 추가</div>
+            <div class="menu-desc">새로운 버스 노선과 정류장을 등록합니다</div>
+          </button>
+          <button class="menu-card" onclick="showView('list')">
+            <div class="menu-icon">📊</div>
+            <div class="menu-title">목록보기</div>
+            <div class="menu-desc">등록된 위치 목록과 수집된 이력을 확인합니다</div>
+          </button>
+          <button class="menu-card" onclick="showView('options')">
+            <div class="menu-icon">🛠️</div>
+            <div class="menu-title">옵션</div>
+            <div class="menu-desc">데이터 저장 경로 및 API 키를 설정합니다</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 모니터링 등록 뷰 -->
+      <div id="register-view" class="view">
+
+        <!-- 선택 모드 탭 -->
+        <div class="mode-tabs">
+          <button class="mode-btn active" data-mode="route-first" onclick="switchMode('route-first')">
+            🚌 노선 먼저 선택
+          </button>
+          <button class="mode-btn" data-mode="station-first" onclick="switchMode('station-first')">
+            🚏 정류장 먼저 선택
+          </button>
+        </div>
+
+        <!-- 모니터링 등록 폼 -->
+        <div class="monitoring-form" style="margin-bottom: 2rem;">
+          <div class="form-summary">
+            <div class="summary-row">
+              <label>🚌 선택한 노선:</label>
+              <span id="summary-route" class="not-selected">노선을 선택해주세요</span>
+            </div>
+            <div class="summary-row">
+              <label>🚏 선택한 정류장:</label>
+              <span id="summary-station" class="not-selected">정류장을 선택해주세요</span>
+            </div>
+          </div>
+          <button id="register-btn" class="submit-btn" onclick="registerMonitoring()" disabled>
+            🚀 이 위치 모니터링 시작
+          </button>
+        </div>
+
+        <!-- 노선 먼저 선택 모드 -->
+        <div id="route-first-mode" class="selection-mode active">
+          <div class="search-row">
+            <!-- 노선 검색 -->
+            <div class="search-box">
+              <h2>🚌 1단계: 노선 검색</h2>
+              <div class="input-group">
+                <input type="text" id="rf-route-keyword" placeholder="노선 번호 (예: M5100, 8106)">
+                <button onclick="searchRoutesForRouteFirst()">검색</button>
+              </div>
+              <div id="rf-route-selected" class="selected-info hidden"></div>
+              <div id="rf-route-results" class="results"></div>
+            </div>
+
+            <!-- 정류장 목록 (노선 선택 후 활성화) -->
+            <div class="search-box" id="rf-station-box">
+              <h2>🚏 2단계: 정류장 선택</h2>
+              <div id="rf-station-hint" class="hint-text">노선을 먼저 선택해주세요</div>
+              <div id="rf-station-selected" class="selected-info hidden"></div>
+              <div id="rf-station-results" class="results"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 정류장 먼저 선택 모드 -->
+        <div id="station-first-mode" class="selection-mode">
+          <div class="search-row">
+            <!-- 정류장 검색 -->
+            <div class="search-box">
+              <h2>🚏 1단계: 정류장 검색</h2>
+              <div class="input-group">
+                <input type="text" id="sf-station-keyword" placeholder="정류장 이름 (예: 판교역, 강남역)">
+                <button onclick="searchStationsForStationFirst()">검색</button>
+              </div>
+              <div id="sf-station-selected" class="selected-info hidden"></div>
+              <div id="sf-station-results" class="results"></div>
+            </div>
+
+            <!-- 노선 목록 (정류장 선택 후 활성화) -->
+            <div class="search-box" id="sf-route-box">
+              <h2>🚌 2단계: 노선 선택</h2>
+              <div id="sf-route-hint" class="hint-text">정류장을 먼저 선택해주세요</div>
+              <div id="sf-route-selected" class="selected-info hidden"></div>
+              <div id="sf-route-results" class="results"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 모니터링 목록 뷰 -->
+      <div id="list-view" class="view">
+        <div class="config-list">
+          <div class="list-header">
+            <h2>⚙️ 모니터링 목록</h2>
+            <div class="global-filters">
+              <label for="global-date">조회 날짜:</label>
+              <div class="date-input-wrapper">
+                <input type="date" id="global-date" onchange="refreshCurrentArrivals()">
+                <button class="clear-date-btn" onclick="clearDateFilter()" title="날짜 초기화">✕</button>
+              </div>
+              <button onclick="loadConfigs()">🔄 새로고침</button>
+            </div>
+          </div>
+          <div id="configs-content"></div>
+        </div>
+      </div>
+
+      <!-- 옵션 뷰 -->
+      <div id="options-view" class="view">
+        <div class="options-container">
+          <h2>🛠️ 시스템 설정</h2>
+          <div class="option-group">
+            <label for="storage-path">📦 데이터 저장 경로</label>
+            <div class="input-group">
+              <input type="text" id="storage-path" placeholder="예: /Users/user/bus_data" readonly>
+              <button onclick="selectStoragePath()">경로 선택</button>
+            </div>
+            <p class="help-text">DB와 설정 파일이 저장될 폴더를 선택하세요.</p>
+          </div>
+          <div class="option-group">
+            <label for="api-key">🔑 공공데이터포털 API Key</label>
+            <input type="password" id="api-key" placeholder="Service Key (Decoding)">
+          </div>
+          <div class="option-row">
+            <div class="option-group small">
+              <label for="start-hour">🕒 수집 시작 시각 (0-23)</label>
+              <input type="number" id="start-hour" min="0" max="23" placeholder="0">
+            </div>
+            <div class="option-group small">
+              <label for="end-hour">🕒 수집 종료 시각 (0-23)</label>
+              <input type="number" id="end-hour" min="0" max="23" placeholder="0">
+            </div>
+          </div>
+          <p class="help-text">둘 다 0이면 24시간 수집합니다. (예: 9-18시)</p>
+          <div class="option-group">
+            <label for="interval-ms">⏱️ 수집 주기 (ms)</label>
+            <input type="number" id="interval-ms" min="1000" step="1000" placeholder="30000">
+            <p class="help-text">수집 간격을 밀리초 단위로 설정합니다. (기본 30,000ms = 30초)</p>
+          </div>
+          <button class="submit-btn" onclick="saveSettings()">⚙️ 설정 저장 및 적용</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>Bus History Collection System © 2025</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
